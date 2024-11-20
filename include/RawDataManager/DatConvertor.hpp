@@ -24,7 +24,7 @@ using ChannelData = std::array<IQData, 4>;
 void ConvertTo64BitData(const std::vector<CHAR> &rawData,
                         std::vector<int64_t> &bit64ChannelData) {
   if (rawData.size() % 8 != 0) {
-    throw std::runtime_error("原始数据大小不是8的倍数，无法转换为int64_t类型");
+    throw std::runtime_error("原始数据大小不是8的倍数,无法转换为int64_t类型");
   }
 
   bit64ChannelData.reserve(rawData.size() / 8);
