@@ -51,8 +51,10 @@ class DACParser : public ModuleParser {
 public:
   explicit DACParser(const std::string &cfg)
       : ModuleParser("DAC"), m_cfg(cfg), m_parser(ParseMode::Synchronous) {}
-  void parse() override {}
-  CSVParser::DataContainer GetModuleCFGData() const override { return {}; }
+  void parse() override { m_parser.ParseDataFromCSV(m_cfg); }
+  CSVParser::DataContainer GetModuleCFGData() const override {
+    return m_parser.GetCSVData();
+  }
 
 private:
   std::string m_cfg;
@@ -62,9 +64,11 @@ private:
 class ModParser : public ModuleParser {
 public:
   explicit ModParser(const std::string &cfg)
-      : ModuleParser("DAC"), m_cfg(cfg), m_parser(ParseMode::Synchronous) {}
-  void parse() override {}
-  CSVParser::DataContainer GetModuleCFGData() const override { return {}; }
+      : ModuleParser("MOD"), m_cfg(cfg), m_parser(ParseMode::Synchronous) {}
+  void parse() override { m_parser.ParseDataFromCSV(m_cfg); }
+  CSVParser::DataContainer GetModuleCFGData() const override {
+    return m_parser.GetCSVData();
+  }
 
 private:
   std::string m_cfg;
@@ -74,9 +78,11 @@ private:
 class SGCParser : public ModuleParser {
 public:
   explicit SGCParser(const std::string &cfg)
-      : ModuleParser("DAC"), m_cfg(cfg), m_parser(ParseMode::Synchronous) {}
-  void parse() override {}
-  CSVParser::DataContainer GetModuleCFGData() const override { return {}; }
+      : ModuleParser("SGC"), m_cfg(cfg), m_parser(ParseMode::Synchronous) {}
+  void parse() override { m_parser.ParseDataFromCSV(m_cfg); }
+  CSVParser::DataContainer GetModuleCFGData() const override {
+    return m_parser.GetCSVData();
+  }
 
 private:
   std::string m_cfg;
@@ -86,9 +92,25 @@ private:
 class FEParser : public ModuleParser {
 public:
   explicit FEParser(const std::string &cfg)
-      : ModuleParser("DAC"), m_cfg(cfg), m_parser(ParseMode::Synchronous) {}
-  void parse() override {}
-  CSVParser::DataContainer GetModuleCFGData() const override { return {}; }
+      : ModuleParser("FE"), m_cfg(cfg), m_parser(ParseMode::Synchronous) {}
+  void parse() override { m_parser.ParseDataFromCSV(m_cfg); }
+  CSVParser::DataContainer GetModuleCFGData() const override {
+    return m_parser.GetCSVData();
+  }
+
+private:
+  std::string m_cfg;
+  CSVParser m_parser;
+};
+
+class RECParser : public ModuleParser {
+public:
+  explicit RECParser(const std::string &cfg)
+      : ModuleParser("REC"), m_cfg(cfg), m_parser(ParseMode::Synchronous) {}
+  void parse() override { m_parser.ParseDataFromCSV(m_cfg); }
+  CSVParser::DataContainer GetModuleCFGData() const override {
+    return m_parser.GetCSVData();
+  }
 
 private:
   std::string m_cfg;
