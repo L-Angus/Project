@@ -9,8 +9,7 @@ int main() {
   try {
     CFGFileManager &FileManager = CFGFileManager::GetInstance();
     FileManager.SetRootPath("./");
-    FileManager.LoadCFGFile("TX/DUT", "DUT.cfg");
-    FileManager.PrintTree();
+
   } catch (const std::exception &e) {
     std::cout << e.what() << std::endl;
   }
