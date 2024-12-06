@@ -51,4 +51,13 @@ public:
 };
 }; // namespace LDModule
 
+struct RERegConfig {
+  USHORT usSlot;
+  BoardType bType;
+  RFType_E eType;
+  UINT uiLen;
+  UINT uiOffset;
+  std::vector<UCHAR> uiValue;
+};
+
 #endif

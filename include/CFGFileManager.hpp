@@ -6,6 +6,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 
 #include "CFGFileNode.hpp"
 #include "ModuleParser.hpp"
@@ -14,6 +15,9 @@ class CFGFileManager {
 public:
   using ParserCreator =
       std::function<ModuleParser::ModuleParserPtr(const std::string &)>;
+  using ParserCreatorMap = std::unordered_map<std::string, ParserCreator>;
+  using CFGParserMap =
+      std::unordered_map<std::string, ModuleParser::ModuleParserPtr>;
   static CFGFileManager &GetInstance() {
     static CFGFileManager instance;
     return instance;
@@ -61,9 +65,8 @@ public:
                                moduleName);
     }
     auto parser = it->second(fullPath);
-    fileNode->SetParser(parser);
-    fileNode->ParseFile();
-    mCFGParsers[fullPath] = fileNode->GetParser();
+    parser->parse();
+    mCFGParsers[fullPath] = parser;
   }
 
   // 获取文件路径
@@ -84,14 +87,8 @@ public:
 
   CFGFileNode::FileNodePtr GetRootNode() const { return mRootNode; }
 
-  ModuleParser::ModuleParserPtr
-  GetParserByFileName(const std::string &filePath) const {
-    return FindParserInNode(mRootNode, filePath);
-  }
-
-  ModuleParser::ModuleParserPtr
-  GetParserByModuleNameAndFileName(const std::string &moduleName,
-                                   const std::string &fileName) const {
+  ModuleParser::ModuleParserPtr GetParser(const std::string &moduleName,
+                                          const std::string &fileName) const {
     std::string fullPath = mRootPath + "/" + moduleName + "/" + fileName;
     if (!std::filesystem::exists(fullPath)) {
       throw std::runtime_error("File not found: " + fullPath);
@@ -107,7 +104,7 @@ public:
     if (mRootPath.empty()) {
       throw std::runtime_error("Root path is not set!");
     }
-    return LoadAllCFGFilesFromNode(mRootNode);
+    TraverseAndLoadFiles(mRootPath);
   }
 
   void Clear() {
@@ -117,22 +114,18 @@ public:
     mParserCreators.clear();
   }
 
+  const std::unordered_map<std::string, ParserCreator> &
+  GetParserCreators() const {
+    return mParserCreators;
+  }
+
 private:
   CFGFileManager() {
-    RegisterModuleParser("PLL", [](const std::string &cfg) {
-      return std::make_shared<PLLParser>(cfg);
-    });
     RegisterModuleParser("FE", [](const std::string &cfg) {
       return std::make_shared<FEParser>(cfg);
     });
-    RegisterModuleParser("Mod", [](const std::string &cfg) {
-      return std::make_shared<ModParser>(cfg);
-    });
-    RegisterModuleParser("SGC", [](const std::string &cfg) {
-      return std::make_shared<SGCParser>(cfg);
-    });
-    RegisterModuleParser("DAC", [](const std::string &cfg) {
-      return std::make_shared<DACParser>(cfg);
+    RegisterModuleParser("REC", [](const std::string &cfg) {
+      return std::make_shared<RECParser>(cfg);
     });
   }
   std::string NormalizePath(const std::string &rawPath) {
@@ -143,71 +136,22 @@ private:
 
   void RegisterModuleParser(const std::string &moduleName,
                             ParserCreator parser) {
-    mParserCreators[moduleName] = parser;
+    mParserCreators[moduleName] = std::move(parser);
   }
 
-  void LoadAllCFGFilesFromNode(CFGFileNode::FileNodePtr node) {
-    auto curNode = node ? node : mRootNode;
-    if (!curNode) {
-      throw std::runtime_error("Root node is null!");
-    }
-    if (!curNode->isDirectory()) {
-      std::string dir = (curNode == mRootNode)
-                            ? mRootPath
-                            : mRootPath + "/" + curNode->GetNodeName();
-      ScanFileNode(curNode, dir);
-    }
-    if (curNode->isFile()) {
-      auto parent = curNode->GetParent();
-      if (!parent) {
-        throw std::runtime_error("File node has no parent!");
-      }
-      auto moduleName = parent->GetNodeName();
-      LoadCFGFile(moduleName, curNode->GetNodeName());
-      return;
-    }
-    for (const auto &[_, child] : curNode->GetChildren()) {
-      LoadAllCFGFilesFromNode(child);
-    }
-  }
-
-  void ScanFileNode(CFGFileNode::FileNodePtr node, const std::string &dir) {
-    for (const auto &entry : std::filesystem::directory_iterator(dir)) {
+  void TraverseAndLoadFiles(const std::string &currentPath) {
+    for (const auto &entry : std::filesystem::directory_iterator(currentPath)) {
       if (entry.is_directory()) {
-        auto moduleName = entry.path().filename().string();
-        auto moduleNode = node->GetChild(moduleName);
-        if (!moduleNode) {
-          moduleNode = std::make_shared<CFGFileNode>(moduleName);
-          node->AddChild(moduleName, moduleNode);
-        }
-        ScanFileNode(moduleNode, entry.path().string());
+        auto dirName = entry.path().filename().string();
+        auto dirNode = std::make_shared<CFGFileNode>(dirName);
+        mRootNode->AddChild(dirName, dirNode);
+        TraverseAndLoadFiles(entry.path().generic_string());
       } else if (entry.is_regular_file()) {
         auto fileName = entry.path().filename().string();
-        auto fileNode = node->GetChild(fileName);
-        if (!fileNode) {
-          fileNode = std::make_shared<CFGFileNode>(fileName);
-          node->AddChild(fileName, fileNode);
-        }
+        auto moduleName = entry.path().parent_path().filename().string();
+        LoadCFGFile(moduleName, fileName);
       }
     }
-  }
-
-  ModParser::ModuleParserPtr
-  FindParserInNode(CFGFileNode::FileNodePtr node,
-                   const std::string &filePath) const {
-    if (!node) {
-      return nullptr;
-    }
-    if (node->isFile() && node->GetNodeName() == filePath) {
-      return node->GetParser();
-    }
-    for (const auto &[_, child] : node->GetChildren()) {
-      auto parser = FindParserInNode(child, filePath);
-      if (parser) {
-        return parser;
-      }
-    }
-    return nullptr;
   }
 
   std::string mRootPath;

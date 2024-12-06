@@ -127,6 +127,14 @@ public:
     }
     auto fileNode = std::make_shared<CFGFileNode>(fileName, fullPath);
     moduleNode->AddChild(fileName, fileNode);
+
+    auto it = mParserCreators.find(moduleName);
+    if (it != mParserCreators.end()) {
+      throw std::runtime_error("Module parser already registered: " +
+                               moduleName);
+    }
+    auto parser = it->second(fullPath);
+    mCFGParsers[fullPath] = std::move(parser);
   }
 
   void LoadAllCFGFiles() {
