@@ -1,0 +1,3 @@
+/Users/lishundong/Desktop/2023/projects/Project/include/CMakeFiles/Strategy.dir
+/Users/lishundong/Desktop/2023/projects/Project/include/CMakeFiles/edit_cache.dir
+/Users/lishundong/Desktop/2023/projects/Project/include/CMakeFiles/rebuild_cache.dir

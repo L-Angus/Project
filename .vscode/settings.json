@@ -85,6 +85,8 @@
         "source_location": "cpp",
         "format": "cpp",
         "shared_mutex": "cpp",
-        "span": "cpp"
+        "span": "cpp",
+        "any": "cpp",
+        "regex": "cpp"
     }
 }
