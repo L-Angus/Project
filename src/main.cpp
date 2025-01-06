@@ -3,7 +3,7 @@
 #include <map>
 #include <vector>
 
-// #include "RFStrategy/HardwareStrategy.h"
+#include "RFStrategy/HardwareStrategy.h"
 // #include "RFStrategy/RFModuleConfigure.h"
 
 // 假设有这个函数，用于计算不小于x的下一个2的幂

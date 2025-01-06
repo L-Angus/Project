@@ -177,35 +177,4 @@ private:
   QueryParams mQueryParams;
 };
 
-// template <typename RFModule> class RFModuleFactory {
-// public:
-//   using CreatorFunc =
-//       std::function<std::unique_ptr<RFModule>(const std::vector<unsigned int> &, double,
-//       double)>;
-
-//   // 静态注册模块
-//   static void RegisterModule(const std::string &name, CreatorFunc creator) {
-//     GetRegistry()[name] = std::move(creator);
-//   }
-
-//   // 静态创建模块实例
-//   static std::unique_ptr<RFModule> CreateModule(const std::string &name,
-//                                                 const std::vector<unsigned int> &ports, double
-//                                                 freq, double power) {
-//     const auto &registry = GetRegistry();
-//     auto it = registry.find(name);
-//     if (it != registry.end()) {
-//       return it->second(ports, freq, power);
-//     }
-//     throw std::runtime_error("No creator registered for module: " + name);
-//   }
-
-// private:
-//   // 获取静态注册表
-//   static std::map<std::string, CreatorFunc> &GetRegistry() {
-//     static std::map<std::string, CreatorFunc> registry;
-//     return registry;
-//   }
-// };
-
 #endif // RFMODULECONFIGURE_H

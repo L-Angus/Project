@@ -50,20 +50,80 @@ private:
   CSVParser m_parser;
   std::string m_cfg;
 };
-
+namespace RX {
 struct FE {
   static constexpr inline const char *ModuleName = "FE";
 };
 struct REC {
   static constexpr inline const char *ModuleName = "REC";
 };
-struct RX {
-  static constexpr inline const char *ModuleName = "RX";
+struct HW {
+  static constexpr inline const char *ModuleName = "HW";
+};
+} // namespace RX
+
+namespace TX::CW {
+struct FE {
+  static constexpr inline const char *ModuleName = "CW/FE";
+};
+struct DAC {
+  static constexpr inline const char *ModuleName = "CW/REC";
+};
+struct MOD {
+  static constexpr inline const char *ModuleName = "CW/MOD";
+};
+struct HW {
+  static constexpr inline const char *ModuleName = "CW/HW";
+};
+struct SGC1 {
+  static constexpr inline const char *ModuleName = "CW/SGC1";
+};
+struct SGC2 {
+  static constexpr inline const char *ModuleName = "CW/SGC2";
 };
 
-using FEParser = GenericParser<FE>;
-using RECParser = GenericParser<REC>;
-using RXParser = GenericParser<RX>;
+}; // namespace TX::CW
+namespace TX::DT {
+struct FE {
+  static constexpr inline const char *ModuleName = "DT/FE";
+};
+struct DAC {
+  static constexpr inline const char *ModuleName = "DT/REC";
+};
+struct MOD {
+  static constexpr inline const char *ModuleName = "DT/MOD";
+};
+struct HW {
+  static constexpr inline const char *ModuleName = "DT/HW";
+};
+struct SGC1 {
+  static constexpr inline const char *ModuleName = "DT/SGC1";
+};
+struct SGC2 {
+  static constexpr inline const char *ModuleName = "DT/SGC2";
+};
+}; // namespace TX::DT
+
+namespace TX::MOD {
+struct FE {
+  static constexpr inline const char *ModuleName = "MOD/FE";
+};
+struct DAC {
+  static constexpr inline const char *ModuleName = "MOD/REC";
+};
+struct MOD {
+  static constexpr inline const char *ModuleName = "MOD/MOD";
+};
+struct HW {
+  static constexpr inline const char *ModuleName = "MOD/HW";
+};
+struct SGC1 {
+  static constexpr inline const char *ModuleName = "MOD/SGC1";
+};
+struct SGC2 {
+  static constexpr inline const char *ModuleName = "MOD/SGC2";
+};
+}; // namespace TX::MOD
 
 // Factory function to create parsers
 template <typename Module> CFGFileParser::CFGFileParserPtr CreateParser(const std::string &cfg) {

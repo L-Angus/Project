@@ -25,6 +25,7 @@ struct QueryParams {
 };
 
 struct ModuleInfo {
+  std::string priorModule; // 前置模块名称
   std::string moduleName;
   unsigned int moduleID;
 };
