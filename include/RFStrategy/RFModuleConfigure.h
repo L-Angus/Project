@@ -12,6 +12,7 @@
 #include "../CSVReader.h"
 #include "CFGFileManager.hpp"
 #include "Common.h"
+#include "DataFittingManager.hpp"
 #include "DynamicQueryPolicy.hpp"
 #include "FEInner.h"
 
@@ -31,76 +32,11 @@ protected:
   virtual void configure_impl() = 0;
 };
 
-// class RECModule : public RFModuleConfigure<RECModule, 128> {
-// public:
-//   RECModule(const std::vector<unsigned int> &recCombines, double freq, double power)
-//       : recCombines(recCombines), freq(freq), power(power) {}
-//   void configure_impl() override {
-//     config.moduleName = moduleName;
-//     std::cout << "Configure " << moduleName << std::endl;
-//     for (auto &combine : recCombines) {
-//       config.bits.set(combine, true);
-//     }
-//     std::cout << "Bit size: " << config.bits.size() << std::endl;
-//     std::cout << "Freq: " << freq << ", Power: " << power << std::endl;
-//   }
-//   const Configuration<128> &GetConfiguration() const { return config; }
-
-// private:
-//   Configuration<128> config{};
-//   std::vector<unsigned int> recCombines;
-//   double freq;
-//   double power;
-//   inline static std::string moduleName{"REC"};
-// };
-// class FEModule : public RFModuleConfigure<FEModule, 256> {
-// public:
-//   FEModule(uint32_t slot, const std::vector<uint32_t> &ports,
-//            const std::vector<ModuleInfo> &modules, QueryParams queryParams)
-//       : mSlot(slot), mPorts(ports), moduleInfos(std::move(modules)), mQueryParams(queryParams) {
-//     std::cout << "modules: " << modules.size() << std::endl;
-//   }
-//   void configure_impl() override {
-//     auto &fileManager = CFGFileManager::GetInstance();
-//     std::cout << moduleInfos.size() << std::endl;
-//     for (const auto &module : moduleInfos) {
-//       // 根据端口号查询对应的配置文件
-//       std::string filename = "FE" + std::to_string(module.moduleID) + ".csv";
-//       std::cout << "Filename: " << filename << std::endl;
-//       auto parser = fileManager.GetParser("FE", filename);
-//       if (!parser) {
-//         throw std::runtime_error("Failed to get parser for FE" +
-//         std::to_string(module.moduleID));
-//       }
-
-//       parser->parse();
-//       DataQueryEngine engine(parser);
-//       FreqPowerQueryPolicy freqPowerQuery(mQueryParams.queryFreq, mQueryParams.queryPower);
-//       QueryResult result = engine.ExecuteQuery(freqPowerQuery);
-
-//       // 模拟通过 FEInner 设置比特位
-//       FEInner feInner;
-//       feInner.SetPort(
-//           std::set<unsigned int>{mPorts.begin(), mPorts.end()}); // 示例：根据端口号设置比特位
-//       auto febits = feInner.GetPort();
-//       std::cout << "FE bits: " << febits.to_string() << std::endl;
-//       config.bits |= febits; // 合并当前端口的比特位
-//     }
-//   }
-//   const Configuration<256> &GetConfiguration() const { return config; }
-
-// private:
-//   Configuration<256> config{};
-//   uint32_t mSlot;
-//   std::vector<uint32_t> mPorts;
-//   std::vector<ModuleInfo> moduleInfos;
-//   QueryParams mQueryParams;
-//   inline static std::string moduleName{"FE"};
-// };
 class FEModule : public RFModuleConfigure<FEModule, 256> {
 public:
   FEModule(uint32_t slot, const std::vector<SlotData> &slotData, QueryParams queryParams)
-      : mSlot(slot), mSlotData(slotData), mQueryParams(queryParams) {}
+      : mSlot(slot), mSlotData(slotData), mQueryParams(queryParams),
+        m_fittingStrategy(std::make_shared<DutclkPortFittingStrategy>()) {}
 
   void configure_impl() override {
     auto &fileManager = CFGFileManager::GetInstance();
@@ -119,13 +55,51 @@ public:
       parser->parse();
       DataQueryEngine engine(parser);
       FreqPowerQueryPolicy freqPowerQuery(mQueryParams.queryFreq, mQueryParams.queryPower);
-      QueryResult result = engine.ExecuteQuery(freqPowerQuery);
 
-      // 模拟通过 FEInner 设置比特位
-      FEInner feInner;
-      feInner.SetPort({*data.portNo}); // 使用 portNo
-      config.bits |= feInner.GetPort();
+      QueryResult result = engine.ExecuteQuery(freqPowerQuery);
+      if (result.IsEmpty()) {
+        // 2. 若未找到，则调用拟合策略
+        if (m_fittingStrategy) {
+          FittingParams fittingParams(mQueryParams.queryFreq, mQueryParams.queryPower);
+          auto newRowOpt = m_fittingStrategy->DoFittingRow(engine, fittingParams);
+          if (newRowOpt.has_value()) {
+            // 3. 写回
+            auto newRow = newRowOpt.value();
+            /** 覆盖1行或者多行的写回 */
+            bool success = engine.AddFittedRows({newRow});
+            if (!success) {
+              throw std::runtime_error("Failed to add fitted rows");
+            } else {
+              std::cout << "[FEModule] Insert row success: ";
+              for (auto &cell : newRow) {
+                std::cout << cell << " ";
+              }
+              std::cout << std::endl;
+            }
+
+            // 4. 可选：做一次验收
+            bool validated = engine.VerifyRowExists([&](const auto &dataContainer) {
+              for (const auto &row : dataContainer) {
+                if (row[0] == std::to_string(mQueryParams.queryFreq) &&
+                    row[1] == std::to_string(mQueryParams.queryPower)) {
+                  return true;
+                }
+              }
+              return false;
+            });
+            if (!validated) {
+              throw std::runtime_error(
+                  "[FEModule] Inserted row not found in data container. Possibly an error.");
+            }
+          }
+        }
+      }
     }
+
+    // // 模拟通过 FEInner 设置比特位
+    // FEInner feInner;
+    // feInner.SetPort({*data.portNo}); // 使用 portNo
+    // config.bits |= feInner.GetPort();
   }
 
   const Configuration<256> &GetConfiguration() const { return config; }
@@ -135,6 +109,7 @@ private:
   uint32_t mSlot;
   std::vector<SlotData> mSlotData;
   QueryParams mQueryParams;
+  std::shared_ptr<IFittingStrategy> m_fittingStrategy = nullptr;
 };
 
 class RECModule : public RFModuleConfigure<RECModule, 128> {

@@ -18,6 +18,7 @@ public:
   size_t GetMatchedRowCount() const { return matchedRows.size(); }
   const DataContainer &GetMatchedRows() const { return matchedRows; }
   void AddMatchedRow(const Row &row) { matchedRows.push_back(row); }
+  bool IsEmpty() const { return matchedRows.empty(); }
 
 private:
   DataContainer matchedRows; // 匹配的行数据
@@ -61,7 +62,7 @@ public:
         result.AddMatchedRow(row);
       }
     }
-    return !result.GetMatchedRows().empty();
+    return !result.IsEmpty();
   }
 
 private:
@@ -70,6 +71,7 @@ private:
     double power = stod(std::string{row[1]});
     return freq == m_freq && power == m_power;
   }
+
   double m_freq;
   double m_power;
 };
@@ -80,10 +82,22 @@ public:
 
   QueryResult ExecuteQuery(const IQueryPolicy &policy) {
     QueryResult result;
-    if (!policy.Execute(m_parser->GetModuleCFGData(), result)) {
-      throw std::runtime_error("Query execution failed");
-    }
+    [[maybe_unused]] bool success = policy.Execute(m_parser->GetModuleCFGData(), result);
     return result;
+  }
+
+  CFGFileParser::CFGFileParserPtr GetOwnership() const { return m_parser; }
+
+  // 可选“验收式”再查询，校验插入的数据确实可见
+  [[maybe_unused]] bool
+  VerifyRowExists(std::function<bool(const CSVParser::DataContainer &)> checker) {
+    auto data = m_parser->GetModuleCFGData();
+    return checker(data);
+  }
+
+  // 缓存插值数据（单行或多行）
+  bool AddFittedRows(const std::vector<std::vector<std::string>> &rows) {
+    return m_parser->AddFittedRows(rows);
   }
 
 private:

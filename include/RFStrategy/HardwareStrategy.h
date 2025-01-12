@@ -70,7 +70,7 @@ private:
   }
   void ParseConfigFile() {
     auto &manager = CFGFileManager::GetInstance();
-    mPrser = manager.GetParser("RX", "RX.csv");
+    mPrser = manager.GetParser("HW", "HW.csv");
     if (!mPrser) {
       throw std::runtime_error("RXStrategy::ParseConfigFile() failed to get parser");
     }
@@ -169,6 +169,7 @@ private:
 
     for (const auto &[slot, ports] : m_slotChannels) {
       PortNoQueryPolicy portQuery(ports);
+      std::cout << "--------------- TXCWStrategy Execute Query: --------------" << std::endl;
       auto result = engine.ExecuteQuery(portQuery);
 
       if (result.GetMatchedRowCount() == 0) {
@@ -272,6 +273,8 @@ private:
 
     for (const auto &[slot, ports] : m_slotChannels) {
       PortNoQueryPolicy portQuery(ports);
+      std::cout << "--------------- TXMODStrategy Execute Query: "
+                << " ---------------" << std::endl;
       auto result = engine.ExecuteQuery(portQuery);
 
       if (result.GetMatchedRowCount() == 0) {

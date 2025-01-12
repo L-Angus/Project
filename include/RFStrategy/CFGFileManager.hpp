@@ -34,7 +34,7 @@ public:
     if (!std::filesystem::is_directory(absolutePath)) {
       throw CFGFileNodeException("Root path is not a directory: " + normalizedPath);
     }
-    this->mRootPath = absolutePath.string() + "/Config";
+    this->mRootPath = absolutePath.string() + "/Configs";
     mRootNode = CFGFileNode::Create(this->mRootPath);
   }
 
@@ -122,48 +122,9 @@ public:
 
 private:
   CFGFileManager() {
-    RegisterModuleParser("RX/FE", [](const std::string &cfg) { return CreateParser<RX::FE>(cfg); });
-    RegisterModuleParser("RX/REC",
-                         [](const std::string &cfg) { return CreateParser<RX::REC>(cfg); });
-    RegisterModuleParser("RX/HW", [](const std::string &cfg) { return CreateParser<RX::HW>(cfg); });
-    RegisterModuleParser("TX/CW/HW",
-                         [](const std::string &cfg) { return CreateParser<TX::CW::HW>(cfg); });
-    RegisterModuleParser("TX/CW/DAC",
-                         [](const std::string &cfg) { return CreateParser<TX::CW::DAC>(cfg); });
-    RegisterModuleParser("TX/CW/MOD",
-                         [](const std::string &cfg) { return CreateParser<TX::CW::MOD>(cfg); });
-    RegisterModuleParser("TX/CW/SGC1",
-                         [](const std::string &cfg) { return CreateParser<TX::CW::SGC1>(cfg); });
-    RegisterModuleParser("TX/CW/SGC2",
-                         [](const std::string &cfg) { return CreateParser<TX::CW::SGC2>(cfg); });
-    RegisterModuleParser("TX/CW/FE",
-                         [](const std::string &cfg) { return CreateParser<TX::CW::FE>(cfg); });
-
-    RegisterModuleParser("TX/DT/HW",
-                         [](const std::string &cfg) { return CreateParser<TX::DT::HW>(cfg); });
-    RegisterModuleParser("TX/DT/DAC",
-                         [](const std::string &cfg) { return CreateParser<TX::DT::DAC>(cfg); });
-    RegisterModuleParser("TX/DT/MOD",
-                         [](const std::string &cfg) { return CreateParser<TX::DT::MOD>(cfg); });
-    RegisterModuleParser("TX/DT/SGC1",
-                         [](const std::string &cfg) { return CreateParser<TX::DT::SGC1>(cfg); });
-    RegisterModuleParser("TX/DT/SGC2",
-                         [](const std::string &cfg) { return CreateParser<TX::DT::SGC2>(cfg); });
-    RegisterModuleParser("TX/DT/FE",
-                         [](const std::string &cfg) { return CreateParser<TX::DT::FE>(cfg); });
-
-    RegisterModuleParser("TX/MOD/HW",
-                         [](const std::string &cfg) { return CreateParser<TX::MOD::HW>(cfg); });
-    RegisterModuleParser("TX/MOD/DAC",
-                         [](const std::string &cfg) { return CreateParser<TX::MOD::DAC>(cfg); });
-    RegisterModuleParser("TX/MOD/MOD",
-                         [](const std::string &cfg) { return CreateParser<TX::MOD::MOD>(cfg); });
-    RegisterModuleParser("TX/MOD/SGC1",
-                         [](const std::string &cfg) { return CreateParser<TX::MOD::SGC1>(cfg); });
-    RegisterModuleParser("TX/MOD/SGC2",
-                         [](const std::string &cfg) { return CreateParser<TX::MOD::SGC2>(cfg); });
-    RegisterModuleParser("TX/MOD/FE",
-                         [](const std::string &cfg) { return CreateParser<TX::MOD::FE>(cfg); });
+    RegisterModuleParser("FE", [](const std::string &cfg) { return CreateParser<RX::FE>(cfg); });
+    RegisterModuleParser("REC", [](const std::string &cfg) { return CreateParser<RX::REC>(cfg); });
+    RegisterModuleParser("HW", [](const std::string &cfg) { return CreateParser<RX::HW>(cfg); });
   }
 
   ~CFGFileManager() {

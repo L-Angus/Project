@@ -3,8 +3,9 @@
 #include <map>
 #include <vector>
 
+#include "RFStrategy/DataFittingManager.hpp"
 #include "RFStrategy/HardwareStrategy.h"
-// #include "RFStrategy/RFModuleConfigure.h"
+#include "RFStrategy/RFModuleConfigure.h"
 
 // 假设有这个函数，用于计算不小于x的下一个2的幂
 size_t NextPowerOfTwo(size_t x) {
@@ -22,27 +23,28 @@ size_t NextPowerOfTwo(size_t x) {
 
 int main() {
   std::cout << "___________ Convertor ___________" << std::endl;
-  // auto &manager = CFGFileManager::GetInstance();
-  // manager.SetRootPath("../");
-  // manager.LoadAllCFGFiles();
+  auto &manager = CFGFileManager::GetInstance();
+  manager.SetRootPath("./");
+  manager.LoadAllCFGFiles();
 
-  // QueryParams queryParams;
-  // queryParams.queryFreq = 300;
-  // queryParams.queryPower = -30;
+  QueryParams queryParams;
+  queryParams.queryFreq = 12;
+  queryParams.queryPower = 8.5;
 
-  // SlotChannelMap slotChannels = {{0, {0, 1, 3}}};
+  SlotChannelMap slotChannels = {{0, {0, 7, 16}}};
 
-  // RXStrategy rxStrategy(slotChannels);
-  // {
-  //   rxStrategy.ResetStrategy();
-  //   rxStrategy.SetQueryParams(queryParams);
-  //   rxStrategy.BuildStrategy();
-  //   rxStrategy.ApplyStrategy();
-  // }
+  RXStrategy rxStrategy(slotChannels);
+  {
+    rxStrategy.ResetStrategy();
+    rxStrategy.SetQueryParams(queryParams);
+    rxStrategy.BuildStrategy();
+    std::cout << "Buidld Strategy" << std::endl;
+    rxStrategy.ApplyStrategy();
+    std::cout << "Apply Strategy" << std::endl;
+  }
   // rxStrategy.GetConfig();
-
-  auto num = NextPowerOfTwo(65537);
-  std::cout << num << std::endl;
+  // auto num = NextPowerOfTwo(65537);
+  // std::cout << num << std::endl;
 
   return 0;
 }
