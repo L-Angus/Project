@@ -21,6 +21,16 @@ size_t NextPowerOfTwo(size_t x) {
   return x + 1;
 }
 
+int add(int a, int b) { return a + b; }
+int sub(int a, int b) { return a - b; }
+int mul(int a, int b) { return a * b; }
+int divide(int a, int b) {
+  if (b == 0) {
+    throw std::runtime_error("Division by zero");
+  }
+  return a / b;
+}
+
 int main() {
   std::cout << "___________ Convertor ___________" << std::endl;
   auto &manager = CFGFileManager::GetInstance();
@@ -45,6 +55,17 @@ int main() {
   // rxStrategy.GetConfig();
   // auto num = NextPowerOfTwo(65537);
   // std::cout << num << std::endl;
+
+  // std::vector<int (*)(int, int)> operations = {add, sub, mul, divide};
+
+  // for (auto op : operations) {
+  //   try {
+  //     int result = op(10, 5);
+  //     std::cout << "Result: " << result << std::endl;
+  //   } catch (const std::exception &e) {
+  //     std::cerr << "Error: " << e.what() << std::endl;
+  //   }
+  // }
 
   return 0;
 }

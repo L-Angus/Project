@@ -36,7 +36,7 @@ class FEModule : public RFModuleConfigure<FEModule, 256> {
 public:
   FEModule(uint32_t slot, const std::vector<SlotData> &slotData, QueryParams queryParams)
       : mSlot(slot), mSlotData(slotData), mQueryParams(queryParams),
-        m_fittingStrategy(std::make_shared<DutclkPortFittingStrategy>()) {}
+        m_fittingStrategy(std::make_shared<FreqPowerFittingStrategy>()) {}
 
   void configure_impl() override {
     auto &fileManager = CFGFileManager::GetInstance();

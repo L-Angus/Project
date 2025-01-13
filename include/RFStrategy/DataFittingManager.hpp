@@ -19,11 +19,11 @@ struct FittingParams {
 
 namespace FittingHelper {
 
-using DataPoint = std::pair<double, double>;
+using DataPoint = FittingParams;
 using DataPoints = std::vector<DataPoint>;
 using FittingPolicy = std::function<DataPoints(const DataQueryEngine &, const FittingParams &)>;
 static DataPoints CollectNearbyDataPoints(DataQueryEngine &engine, const FittingParams &params,
-                                          FittingPolicy policy) {
+                                          const FittingPolicy &policy) {
   return policy(engine, params);
 }
 
@@ -58,7 +58,7 @@ public:
                                                                const FittingParams &params) = 0;
 };
 
-struct NearbyDataPolicy {
+struct FreqPowerNearbyDataPolicy {
   FittingHelper::DataPoints operator()(const DataQueryEngine &engine,
                                        const FittingParams &params) const {
     FittingHelper::DataPoints dataPoints;
@@ -78,13 +78,13 @@ struct NearbyDataPolicy {
 /**
  * @brief 自定义拟合策略
  * */
-class DutclkPortFittingStrategy : public IFittingStrategy {
+class FreqPowerFittingStrategy : public IFittingStrategy {
 public:
   std::optional<std::vector<std::string>> DoFittingRow(DataQueryEngine &engine,
                                                        const FittingParams &params) override {
-    NearbyDataPolicy policy;
     /** 找到近邻数据点 */
-    auto dataPoints = FittingHelper::CollectNearbyDataPoints(engine, params, policy);
+    auto dataPoints =
+        FittingHelper::CollectNearbyDataPoints(engine, params, FreqPowerNearbyDataPolicy());
     if (dataPoints.empty()) {
       // 如果附近也没有任何数据，则直接返回或抛异常
       throw std::runtime_error("No nearby data points found, cannot do fitting.");
@@ -92,7 +92,7 @@ public:
 
     auto [fittedFreq, fittedPower] = *std::min(dataPoints.begin(), dataPoints.end());
     // 构建“拟合策略查询”，看是否已存在一条匹配 fittedFreq/fittedPower 的记录
-    FreqPowerQueryPolicy fittedPolicy(fittedFreq, fittedPower);
+    FreqPowerQueryPolicy fittedPolicy(fittedFreq, fittedPower.value());
     QueryResult fittedResult = engine.ExecuteQuery(fittedPolicy);
 
     if (fittedResult.IsEmpty()) {
