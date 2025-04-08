@@ -165,8 +165,8 @@ CHK_RET GetRawData(IN STREAM_OUT<SerializeBody> &tInStream,
   std::vector<CHAR> totalBuffer(alignedBufferSize);
   while (remainToRead > 0) {
     size_t readSize = std::min(remainToRead, maxReadSize);
-    iRet = DRV_MVPMemExtRead(VP_TYPE_E::VPTYPE_RC_CVP, DDRA, 0x0BB00000 + offset, readSize,
-                             readSize, totalBuffer.data() + offset);
+    iRet = DRV_MVPMemExtIrpRead(VP_TYPE_E::VPTYPE_RC_CVP, DDRA, 0x0BB00000 + offset, readSize,
+                                readSize, totalBuffer.data() + offset);
     if (iRet != ERR_SUCCEED) {
       break;
     }

@@ -16,8 +16,7 @@ public:
   enum class OpenMode { ReadOnly, ReadWrite };
 
   // 构造函数，用于创建或打开一个 .mat 文件
-  explicit MatioCpp17Wrapper(const std::string &filename,
-                             OpenMode mode = OpenMode::ReadWrite) {
+  explicit MatioCpp17Wrapper(const std::string &filename, OpenMode mode = OpenMode::ReadWrite) {
     openMatFile(filename, mode);
   }
 
@@ -34,17 +33,16 @@ public:
 
   // 写入矩阵数据到 MAT 文件
   template <typename T>
-  void writeMatrix(const std::string &varName, const std::vector<T> &data,
-                   size_t rows, size_t cols) {
+  void writeMatrix(const std::string &varName, const std::vector<T> &data, size_t rows,
+                   size_t cols) {
     if (data.size() != rows * cols) {
-      throw std::invalid_argument(
-          "Data size does not match specified dimensions.");
+      throw std::invalid_argument("Data size does not match specified dimensions.");
     }
 
     size_t dims[2] = {rows, cols};
     auto matvar = std::unique_ptr<matvar_t, decltype(&Mat_VarFree)>(
-        Mat_VarCreate(varName.c_str(), getMatClass<T>(), getMatType<T>(), 2,
-                      dims, (void *)data.data(), 0),
+        Mat_VarCreate(varName.c_str(), getMatClass<T>(), getMatType<T>(), 2, dims,
+                      (void *)data.data(), 0),
         Mat_VarFree);
 
     if (!matvar) {
@@ -52,14 +50,12 @@ public:
     }
 
     if (Mat_VarWrite(matfp_.get(), matvar.get(), MAT_COMPRESSION_NONE) != 0) {
-      throw std::runtime_error("Failed to write variable to MAT file: " +
-                               varName);
+      throw std::runtime_error("Failed to write variable to MAT file: " + varName);
     }
   }
 
   // 读取矩阵数据从 MAT 文件
-  template <typename T>
-  std::optional<std::vector<T>> readMatrix(const std::string &varName) {
+  template <typename T> std::optional<std::vector<T>> readMatrix(const std::string &varName) {
     matvar_t *matvar = Mat_VarRead(matfp_.get(), varName.c_str());
     if (!matvar) {
       std::cerr << "Failed to read variable: " << varName << std::endl;
@@ -67,8 +63,7 @@ public:
     }
 
     if (matvar->data_type != getMatType<T>() || matvar->rank != 2) {
-      std::cerr << "Unsupported variable type or dimensions for: " << varName
-                << std::endl;
+      std::cerr << "Unsupported variable type or dimensions for: " << varName << std::endl;
       Mat_VarFree(matvar);
       return std::nullopt;
     }
@@ -87,8 +82,7 @@ public:
   void writeString(const std::string &varName, const std::string &str) {
     size_t dims[2] = {1, str.size()};
     auto matvar = std::unique_ptr<matvar_t, decltype(&Mat_VarFree)>(
-        Mat_VarCreate(varName.c_str(), MAT_C_CHAR, MAT_T_UTF8, 2, dims,
-                      (void *)str.c_str(), 0),
+        Mat_VarCreate(varName.c_str(), MAT_C_CHAR, MAT_T_UTF8, 2, dims, (void *)str.c_str(), 0),
         Mat_VarFree);
 
     if (!matvar) {
@@ -96,8 +90,7 @@ public:
     }
 
     if (Mat_VarWrite(matfp_.get(), matvar.get(), MAT_COMPRESSION_NONE) != 0) {
-      throw std::runtime_error("Failed to write variable to MAT file: " +
-                               varName);
+      throw std::runtime_error("Failed to write variable to MAT file: " + varName);
     }
   }
 
@@ -131,8 +124,7 @@ public:
   void writeIQData(const std::string &varNameI, const std::string &varNameQ,
                    const std::vector<int16_t> &data) {
     if (data.size() % 2 != 0) {
-      throw std::invalid_argument(
-          "Input data size must be even for I/Q representation.");
+      throw std::invalid_argument("Input data size must be even for I/Q representation.");
     }
 
     size_t numRows = data.size() / 2;

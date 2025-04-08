@@ -21,6 +21,8 @@ namespace FittingHelper {
 
 using DataPoint = FittingParams;
 using DataPoints = std::vector<DataPoint>;
+using FittingRow = std::vector<std::string>;
+using FittingRows = std::vector<FittingRow>;
 using FittingPolicy = std::function<DataPoints(const DataQueryEngine &, const FittingParams &)>;
 static DataPoints CollectNearbyDataPoints(DataQueryEngine &engine, const FittingParams &params,
                                           const FittingPolicy &policy) {
@@ -74,6 +76,112 @@ struct FreqPowerNearbyDataPolicy {
     return dataPoints;
   }
 };
+
+// struct FreqPowerNearbyDataPolicy {
+//   FittingHelper::FittingRows operator()(const DataQueryEngine &engine,
+//                                         const FittingParams &params) const {
+//     FittingHelper::FittingRows dataRows;
+//     const auto &allRows = engine.GetOwnership()->GetModuleCFGData();
+//     if (allRows.empty())
+//       return dataRows;
+//     auto fitFreq = params.freq / 1e6;
+//     auto fitPower = params.power.value();
+//     auto size = allRows.size();
+//     auto num = size - 1;
+
+//     auto freq = stod(std::string{allRows.front()[0]});
+//     auto matchIndex = -0xFFFF;
+//     auto freqIndex = 0;
+//     auto powerIndex = 0;
+
+//     auto makeMatchRows = [&allRows, &dataRows](auto left, auto right) {
+//       if (left < 0 || right < 0)
+//         return;
+//       auto &leftRow = allRows[left];
+//       auto &rightRow = allRows[right];
+//       FittingHelper::FittingRow leftrow;
+//       for (auto &data : leftRow) {
+//         leftrow.emplace_back(std::string{data});
+//       }
+//       FittingHelper::FittingRow rightrow;
+//       for (auto &data : rightRow) {
+//         rightrow.emplace_back(std::string{data});
+//       }
+//       dataRows.emplace_back(leftrow);
+//       dataRows.emplace_back(rightrow);
+//     };
+
+//     if (fitFreq > stod(std::string{allRows.back()[0]})) {
+//       FittingHelper::FittingRow row;
+//       auto &datasView = allRows.back();
+//       freq = stod(std::string{datasView[0]});
+//       powerIndex = size - 1;
+//       matchIndex = powerIndex;
+//       while (powerIndex > 0) {
+//         const auto &row = allRows[powerIndex];
+//         const auto &nextrow = allRows[powerIndex - 1];
+//         if (freq != stod(std::string{row[0]}) || freq != stod(std::string{nextrow[0]}))
+//           break;
+//         if ((stod(std::string{row[1]}) - fitPower) * (stod(std::string{nextrow[1]}) - fitPower)
+//         <=
+//             0) {
+//           matchIndex = powerIndex;
+//           break;
+//         }
+//         --powerIndex;
+//       }
+//       makeMatchRows(matchIndex, matchIndex - 1);
+//       return dataRows;
+//     }
+
+//     if (fitFreq < stod(std::string{allRows.front()[0]})) {
+//       while (powerIndex < num) {
+//         const auto &row = allRows[powerIndex];
+//         const auto &nextrow = allRows[powerIndex + 1];
+//         if (freq != stod(std::string{row[0]}) || freq != stod(std::string{nextrow[0]}))
+//           break;
+//         if ((stod(std::string{row[1]}) - fitPower) * (stod(std::string{nextrow[1]}) - fitPower)
+//         <=
+//             0) {
+//           matchIndex = powerIndex;
+//           break;
+//         }
+//         ++powerIndex;
+//       }
+//       makeMatchRows(matchIndex, powerIndex + 1);
+//       return dataRows;
+//     }
+
+//     while (freqIndex < num) {
+//       const auto &row = allRows[freqIndex];
+//       if (freq == stod(std::string{row[0]})) {
+//         ++freqIndex;
+//         continue;
+//       }
+//       if ((stod(std::string{row[0]}) - fitFreq) * (freq - fitFreq) <= 0) {
+//         break;
+//       }
+//       {
+//         freq = stod(std::string{row[0]});
+//         powerIndex = freqIndex;
+//       }
+//       ++freqIndex;
+//     }
+
+//     while (powerIndex < num) {
+//       const auto &row = allRows[powerIndex];
+//       const auto &nextrow = allRows[powerIndex + 1];
+//       if ((stod(std::string{row[1]}) - fitPower) * (stod(std::string{nextrow[1]}) - fitPower) <=
+//           0) {
+//         matchIndex = powerIndex;
+//         break;
+//       }
+//       ++powerIndex;
+//     }
+//     makeMatchRows(matchIndex, matchIndex + 1);
+//     return dataRows;
+//   }
+// };
 
 /**
  * @brief 自定义拟合策略
