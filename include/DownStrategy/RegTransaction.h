@@ -75,7 +75,7 @@ public:
       rollback_callbacks_[module] = [this](ModuleType m) {
         std::cout << "Rollback transaction for module: " << ModuleToString(m) << std::endl;
 
-        if (m == ModuleType::PLL1) {
+        if (m == ModuleType::PLL1) { 
           // 重置Cache配置
           PLLRegCache::Instance().Restore();
         }

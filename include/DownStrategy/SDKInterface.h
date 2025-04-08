@@ -9,6 +9,7 @@
 #include "Com_defs.h"
 #include "RegCacheBase.h"
 #include "RegTransaction.h"
+#include "TX_Module_Reg.h"
 
 class RFStimInterface {
 public:
@@ -21,17 +22,23 @@ public:
   RFStimInterface(BoardType board, StimMode mode)
       : board_type_(board), stim_mode_(mode), transaction_(std::make_unique<RegTransaction>()) {
     InitializeTransactionSet();
+    InitializeModuleGroups();
   }
 
   // 修改Execute函数
   void SetCondition(const QueryCondition &condition) {
-    if (board_type_ == BoardType::LD) {
-      if (stim_mode_ == StimMode::CW_MODE) {
-        ConfigureModule<PLLRegConfig>(ModuleType::PLL1, [&condition](PLLRegConfig &config) {
-          config.SetPLLFreq(condition.freq, FreqUnit::MHz);
-          config.SetPLLSrc(PLLRegConfig::PLLSource::PLL_UP_CONVERSION);
-        });
+    const auto &group = GetModuleGroup(board_type_, stim_mode_);
+    for (const auto& module : group.modules) {
+     std::cout << "Setting condition for module: " << RegTransaction::ModuleToString(module) << std::endl;
+     if(module == ModuleType::PLL1){
+      if(!ConfigureModule<PLLRegConfig>(module, [&](PLLRegConfig &config) {
+        config.SetPLLFreq(condition.freq, condition.unit);
+        config.SetPLLSrc(GetPLLSource());
+      })) {
+        std::cerr << "Failed to configure PLL1 module" << std::endl;
+        return; 
       }
+     }
     }
   }
   bool Execute() {}
@@ -59,10 +66,23 @@ private:
          StimMode::MOD_MODE,
          {ModuleType::PLL1, ModuleType::DACCFG3, ModuleType::DACCFG4, ModuleType::MOD}},
         {BoardType::LD, StimMode::DT_MODE, {ModuleType::PLL1, ModuleType::PLL2, ModuleType::DACCFG4, ModuleType::MOD}},
-        {BoardType::LM, StimMode::CW_MODE, {ModuleType::FE}},
+        {BoardType::LM, StimMode::CW_MODE, {ModuleType::SGC1, ModuleType::FE}},
         {BoardType::LM, StimMode::DT_MODE, {ModuleType::SGC1, ModuleType::SGC2, ModuleType::FE}},
-        {BoardType::LM, StimMode::MOD_MODE, {ModuleType::FE, ModuleType::MOD}}};
+        {BoardType::LM, StimMode::MOD_MODE, {ModuleType::SGC1, ModuleType::FE}}};
   }
+
+  // void InitializeConfigHandlers() {
+  //     static const auto config_handlers_ = []() {
+  //       std::unordered_map<ModuleType, std::function<void(RegConfig&, const QueryCondition&)>> handlers;
+  //       handlers[ModuleType::PLL1] = [](RegConfig &config, const QueryCondition &condition) {
+  //         auto &pll_config = dynamic_cast<PLLRegConfig &>(config);
+  //         pll_config.SetPLLFreq(condition.freq, condition.unit);
+  //         pll_config.SetPLLSrc(PLLRegConfig::PLLSource::PLL_UP_CONVERSION);
+  //       };
+  //       // 其他模块的处理器...
+  //       return handlers;
+  //     }();
+  //   }
 
   bool IsModuleUpdated(ModuleType module) const {
     switch (module) {
@@ -139,6 +159,32 @@ private:
     } catch (const std::exception &e) {
       std::cerr << "Exception in ConfigureModule: " << e.what() << std::endl;
       return false;
+    }
+  }
+
+  const ModuleGroup& GetModuleGroup(BoardType board, StimMode mode) const {
+    auto it = std::find_if(module_groups_.begin(), module_groups_.end(),
+                          [board, mode](const ModuleGroup& group) {
+                            return group.bType == board && group.sMode == mode;
+                          });
+    
+    if (it == module_groups_.end()) {
+      throw std::runtime_error("Invalid board type and mode combination");
+    }
+    
+    return *it;
+  }
+
+  const PLLRegConfig::PLLSource GetPLLSource() const {
+    switch (stim_mode_) {
+    case StimMode::CW_MODE:
+      return PLLRegConfig::PLLSource::PLL_UP_CONVERSION; 
+    case StimMode::MOD_MODE:
+      return PLLRegConfig::PLLSource::PLL_DOWN_CONVERSION;
+    case StimMode::DT_MODE:
+      return PLLRegConfig::PLLSource::PLL_DUAL_TONE;
+    default:
+      throw std::runtime_error("Invalid stim mode");
     }
   }
 };
